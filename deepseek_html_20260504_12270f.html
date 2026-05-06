@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Analysis Database</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --surface: #ffffff;
+            --surface-alt: #f7f9fb;
+            --text: #1a1d23;
+            --text-secondary: #5a5f6b;
+            --border: #dce2e8;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eef3ff;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.06);
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .header {
+            background: #0f172a;
+            color: #fff;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        }
+        .header .logo { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.3px; display: flex; align-items: center; gap: 10px; }
+        .header .logo .icon { width: 38px; height: 38px; background: var(--primary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 9px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.35); }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.6); }
+        .btn-sm { padding: 5px 11px; font-size: 0.8rem; }
+        .btn-danger { background: var(--accent-red); color: #fff; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid transparent; }
+        .btn-ghost:hover { background: var(--surface-alt); border-color: var(--border); }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+        }
+        @media (max-width: 1100px) { .container { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .card-header { font-weight: 700; font-size: 1.05rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+        .card-header .badge { font-size: 0.75rem; background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+
+        .form-card { grid-column: 1 / -1; }
+        .table-card { grid-column: 1 / -1; overflow: hidden; }
+        .analysis-card { grid-column: 1 / -1; background: linear-gradient(135deg, #fafcfd 0%, #f0f4f8 100%); border: 2px solid var(--border); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 14px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+        .form-group input, .form-group select {
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            transition: var(--transition);
+            background: var(--surface);
+            font-family: var(--font);
+            width: 100%;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-section-title {
+            grid-column: 1 / -1;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-top: 8px;
+            border-top: 2px solid var(--border);
+            margin-top: 4px;
+        }
+        .form-section-title:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+        .form-actions { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; padding-top: 6px; }
+
+        .table-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .table-controls select { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; background: var(--surface); font-family: var(--font); min-width: 180px; }
+        .table-controls .search-input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; flex: 1; min-width: 200px; font-family: var(--font); }
+        .table-wrapper { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1400px; }
+        table thead { background: #f1f5f9; position: sticky; top: 0; }
+        table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            border-bottom: 2px solid var(--border);
+        }
+        table th:hover { color: var(--primary); }
+        table th .sort-arrow { margin-left: 3px; font-size: 0.7rem; }
+        table td { padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        table tbody tr { transition: var(--transition); cursor: pointer; }
+        table tbody tr:hover { background: #f8fafc; }
+        table tbody tr.selected { background: var(--primary-light); outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 4px; }
+        .cashflow-positive { color: var(--accent-green); font-weight: 700; }
+        .cashflow-negative { color: var(--accent-red); font-weight: 700; }
+        .yield-cell { font-weight: 600; }
+        .percentage-positive { color: var(--accent-green); font-weight: 600; }
+        .percentage-negative { color: var(--accent-red); font-weight: 600; }
+        .no-data { text-align: center; padding: 40px; color: var(--text-secondary); font-style: italic; }
+
+        .analysis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .analysis-stat { background: var(--surface); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); text-align: center; }
+        .analysis-stat .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); font-weight: 600; }
+        .analysis-stat .stat-value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+        .analysis-stat.highlight-green { border-color: var(--accent-green); background: #f0fdf6; }
+        .analysis-stat.highlight-red { border-color: var(--accent-red); background: #fef5f5; }
+        .analysis-stat.highlight-blue { border-color: var(--primary); background: var(--primary-light); }
+        .mortgage-inputs { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-top: 12px; }
+        .mortgage-inputs .form-group { min-width: 130px; }
+
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: #1a1d23; color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 0.85rem; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; max-width: 400px; }
+        .toast.success { border-left: 4px solid var(--accent-green); }
+        .toast.info { border-left: 4px solid var(--primary); }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(10px); } }
+
+        @media (max-width: 768px) {
+            .header { padding: 12px 14px; }
+            .header .logo { font-size: 1.1rem; }
+            .container { padding: 12px 10px; gap: 12px; }
+            .card { padding: 14px 12px; }
+            .form-grid { grid-template-columns: 1fr 1fr; }
+            .btn { padding: 7px 12px; font-size: 0.8rem; }
+            table { font-size: 0.75rem; min-width: 1200px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo"><span class="icon">🏠</span> Property Analyzer</div>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="exportJSON()">📥 Export JSON</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()">📤 Import JSON</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importJSON(event)">
+            <button class="btn btn-outline btn-sm" onclick="loadSampleData()">📋 Load Samples</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">🗑 Clear All</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="card form-card" id="formCard">
+            <div class="card-header">📝 <span id="formTitle">Add New Property</span> <span class="badge" id="formBadge" style="display:none;">Editing</span></div>
+            <form id="propertyForm" onsubmit="handleFormSubmit(event)" novalidate>
+                <input type="hidden" id="editId" value="">
+                <div class="form-grid">
+                    <div class="form-section-title">📍 Property Details</div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="address">Street Address *</label>
+                        <input type="text" id="address" required placeholder="e.g. 123 Main Street">
+                    </div>
+                    <div class="form-group">
+                        <label for="townCity">Town / City *</label>
+                        <input type="text" id="townCity" required placeholder="e.g. Auckland" list="townCityList">
+                        <datalist id="townCityList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="agent">Real Estate Agent</label>
+                        <input type="text" id="agent" placeholder="e.g. Sarah Jones – Harcourts">
+                    </div>
+                    <div class="form-group">
+                        <label for="askingPrice">Asking Price ($)</label>
+                        <input type="number" id="askingPrice" min="0" step="1" placeholder="800000">
+                    </div>
+                    <div class="form-group">
+                        <label for="cv">CV / Rateable Value ($)</label>
+                        <input type="number" id="cv" min="0" step="1" placeholder="750000">
+                    </div>
+                    <div class="form-group">
+                        <label for="homesEstimate">Homes Estimate ($)</label>
+                        <input type="number" id="homesEstimate" min="0" step="1" placeholder="780000">
+                    </div>
+                    <div class="form-group">
+                        <label for="weeklyRent">Weekly Rent ($) *</label>
+                        <input type="number" id="weeklyRent" min="0" step="0.01" required placeholder="650">
+                    </div>
+                    <div class="form-group">
+                        <label for="soldFor">Sold For ($)</label>
+                        <input type="number" id="soldFor" min="0" step="1" placeholder="790000" onchange="updateLoanFromSold()">
+                    </div>
+                    <div class="form-group">
+                        <label for="soldDate">Sold Date</label>
+                        <input type="date" id="soldDate">
+                    </div>
+
+                    <div class="form-section-title">🏦 Mortgage Parameters</div>
+                    <div class="form-group">
+                        <label for="deposit">Deposit ($)</label>
+                        <input type="number" id="deposit" min="0" step="1" placeholder="160000" onchange="updateLoanFromDeposit()">
+                    </div>
+                    <div class="form-group">
+                        <label for="loanAmount">Loan Amount ($)</label>
+                        <input type="number" id="loanAmount" min="0" step="1" placeholder="640000" onchange="updateDepositFromLoan()">
+                    </div>
+                    <div class="form-group">
+                        <label for="interestRate">Interest Rate (% p.a.)</label>
+                        <input type="number" id="interestRate" min="0" max="30" step="0.01" placeholder="6.50" value="6.50">
+                    </div>
+                    <div class="form-group">
+                        <label for="loanYears">Loan Term (Years)</label>
+                        <input type="number" id="loanYears" min="1" max="50" step="1" placeholder="30" value="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="mortgageType">Mortgage Type</label>
+                        <select id="mortgageType">
+                            <option value="principal_interest" selected>Principal & Interest</option>
+                            <option value="interest_only">Interest Only</option>
+                        </select>
+                    </div>
+
+                    <div class="form-section-title">💸 Weekly & Annual Expenses</div>
+                    <div class="form-group">
+                        <label for="insurance">Insurance ($/year)</label>
+                        <input type="number" id="insurance" min="0" step="0.01" placeholder="1800" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="rates">Rates ($/year)</label>
+                        <input type="number" id="rates" min="0" step="0.01" placeholder="2600" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="managementFeePercent">Management Fee (% of weekly rent)</label>
+                        <input type="number" id="managementFeePercent" min="0" max="100" step="0.1" placeholder="8" value="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="maintenance">Maintenance ($/week)</label>
+                        <input type="number" id="maintenance" min="0" step="0.01" placeholder="40" value="0">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">✅ Add Property</button>
+                        <button type="button" class="btn btn-ghost" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
+                        <button type="button" class="btn btn-ghost" onclick="clearForm()">🧹 Clear Form</button>
+                    </div>
+                </div>
+            </form>
+            <div id="livePreview" style="margin-top:16px; padding:14px; background:#f8fafc; border-radius:var(--radius); border:1px dashed var(--border); display:none;">
+                <strong style="font-size:0.85rem;">📊 Live Preview:</strong>
+                <span id="previewYield" style="margin-left:12px;font-size:0.85rem;"></span>
+                <span id="previewMortgage" style="margin-left:12px;font-size:0.85rem;"></span>
+                <span id="previewCashflow" style="margin-left:12px;font-size:0.85rem;font-weight:700;"></span>
+            </div>
+        </div>
+
+        <div class="card table-card">
+            <div class="card-header">
+                📋 Property Database <span class="badge" id="propertyCount">0 properties</span>
+                <span id="avgSoldBadge" style="margin-left:12px;font-size:0.8rem;"></span>
+            </div>
+            <div class="table-controls">
+                <select id="townFilter" onchange="renderTable()"><option value="">🏙️ All Towns/Cities</option></select>
+                <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search address, town or agent..." oninput="renderTable()">
+                <button class="btn btn-ghost btn-sm" onclick="clearFilter()">Clear Filter</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="setSort('address')">Address <span class="sort-arrow" id="sort-address"></span></th>
+                            <th onclick="setSort('townCity')">Town/City <span class="sort-arrow" id="sort-townCity"></span></th>
+                            <th onclick="setSort('agent')">Agent <span class="sort-arrow" id="sort-agent"></span></th>
+                            <th onclick="setSort('askingPrice')">Asking Price <span class="sort-arrow" id="sort-askingPrice"></span></th>
+                            <th onclick="setSort('cv')">CV <span class="sort-arrow" id="sort-cv"></span></th>
+                            <th onclick="setSort('weeklyRent')">Weekly Rent <span class="sort-arrow" id="sort-weeklyRent"></span></th>
+                            <th onclick="setSort('grossYield')">Gross Yield <span class="sort-arrow" id="sort-grossYield"></span></th>
+                            <th>Mortgage Type</th>
+                            <th onclick="setSort('soldFor')">Sold For <span class="sort-arrow" id="sort-soldFor"></span></th>
+                            <th onclick="setSort('soldVsCvPercent')">Sold % vs CV <span class="sort-arrow" id="sort-soldVsCvPercent"></span></th>
+                            <th onclick="setSort('expectedSellPrice')">Est. Sell Price <span class="sort-arrow" id="sort-expectedSellPrice"></span></th>
+                            <th onclick="setSort('weeklyCashFlow')">Weekly Cash Flow <span class="sort-arrow" id="sort-weeklyCashFlow"></span></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="13" class="no-data">No properties added yet. Use the form above to add your first property.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card analysis-card" id="analysisCard" style="display:none;">
+            <div class="card-header">🔍 Detailed Analysis: <span id="analysisAddress"></span></div>
+            <div class="analysis-grid" id="analysisGrid"></div>
+            <div class="mortgage-inputs" style="margin-top:16px;">
+                <div class="form-group"><label for="analysisInterestRate">Adjust Interest Rate (% p.a.)</label><input type="number" id="analysisInterestRate" min="0" max="30" step="0.01" onchange="refreshAnalysis()"></div>
+                <div class="form-group"><label for="analysisLoanYears">Adjust Loan Term (Years)</label><input type="number" id="analysisLoanYears" min="1" max="50" step="1" onchange="refreshAnalysis()"></div>
+                <div class="form-group"><label for="analysisDeposit">Adjust Deposit ($)</label><input type="number" id="analysisDeposit" min="0" step="1" onchange="refreshAnalysis()"></div>
+                <div class="form-group"><label for="analysisMortgageType">Adjust Mortgage Type</label><select id="analysisMortgageType" onchange="refreshAnalysis()"><option value="principal_interest">Principal & Interest</option><option value="interest_only">Interest Only</option></select></div>
+                <button class="btn btn-primary btn-sm" onclick="saveAnalysisAdjustments()">💾 Save Adjustments</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        (function() {
+            const STORAGE_KEY = 'propertyAnalyzerDB';
+            let properties = [];
+            let sortColumn = 'address';
+            let sortDirection = 'asc';
+            let selectedPropertyId = null;
+
+            function loadData() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        properties = JSON.parse(raw);
+                        if (!Array.isArray(properties)) properties = [];
+                    }
+                } catch (e) { properties = []; }
+                properties = properties.map(normalizeProperty);
+            }
+
+            function normalizeProperty(p) {
+                return {
+                    id: p.id || generateId(),
+                    address: p.address || '',
+                    townCity: p.townCity || '',
+                    agent: p.agent || '',
+                    askingPrice: parseFloat(p.askingPrice) || 0,
+                    cv: parseFloat(p.cv) || 0,
+                    homesEstimate: parseFloat(p.homesEstimate) || 0,
+                    weeklyRent: parseFloat(p.weeklyRent) || 0,
+                    soldFor: parseFloat(p.soldFor) || null,
+                    soldDate: p.soldDate || '',
+                    deposit: parseFloat(p.deposit) || 0,
+                    loanAmount: parseFloat(p.loanAmount) || 0,
+                    interestRate: parseFloat(p.interestRate) || 6.5,
+                    loanYears: parseInt(p.loanYears) || 30,
+                    mortgageType: p.mortgageType || 'principal_interest',
+                    insurance: parseFloat(p.insurance) || 0,
+                    rates: parseFloat(p.rates) || 0,
+                    managementFeePercent: parseFloat(p.managementFeePercent) || 8,
+                    maintenance: parseFloat(p.maintenance) || 0,
+                };
+            }
+
+            function generateId() { return 'prop_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+
+            function saveData() {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(properties)); }
+                catch (e) { showToast('⚠️ Storage full. Please export and clear some data.', 'info'); }
+            }
+
+            // Mortgage calculation with type
+            function calculateWeeklyMortgage(loanAmount, annualRate, years, mortgageType = 'principal_interest') {
+                if (!loanAmount || loanAmount <= 0) return 0;
+                if (mortgageType === 'interest_only') {
+                    if (!annualRate || annualRate <= 0) return 0;
+                    return loanAmount * annualRate / 100 / 52;
+                }
+                if (!annualRate || annualRate <= 0) return loanAmount / (years * 52);
+                const weeklyRate = annualRate / 100 / 52;
+                const totalWeeks = years * 52;
+                const pow = Math.pow(1 + weeklyRate, totalWeeks);
+                return loanAmount * (weeklyRate * pow) / (pow - 1);
+            }
+
+            function calculateGrossYield(weeklyRent, price) {
+                if (!price || price <= 0 || !weeklyRent) return 0;
+                return (weeklyRent * 52) / price * 100;
+            }
+
+            function getPurchasePrice(prop) {
+                return (prop.soldFor && prop.soldFor > 0) ? prop.soldFor : (prop.askingPrice || 0);
+            }
+
+            // Sold vs CV percentage
+            function getSoldVsCvPercent(prop) {
+                if (prop.soldFor && prop.soldFor > 0 && prop.cv && prop.cv > 0) {
+                    return ((prop.soldFor - prop.cv) / prop.cv) * 100;
+                }
+                return null;
+            }
+
+            // Average sold vs CV percentage from all sold properties with CV>0
+            function getAverageSoldPercentage() {
+                const soldWithCv = properties.filter(p => p.soldFor && p.soldFor > 0 && p.cv && p.cv > 0);
+                if (soldWithCv.length === 0) return null;
+                const sum = soldWithCv.reduce((acc, p) => acc + getSoldVsCvPercent(p), 0);
+                return sum / soldWithCv.length;
+            }
+
+            // Expected sell price based on CV and average percentage
+            function getExpectedSellPrice(prop) {
+                if (!prop.cv || prop.cv <= 0) return null;
+                if (prop.soldFor && prop.soldFor > 0) return null; // already sold
+                const avgPct = getAverageSoldPercentage();
+                if (avgPct === null) return null;
+                return prop.cv * (1 + avgPct / 100);
+            }
+
+            function calculateWeeklyCashFlow(prop) {
+                const weeklyRent = prop.weeklyRent || 0;
+                const weeklyMortgage = calculateWeeklyMortgage(prop.loanAmount || 0, prop.interestRate || 0, prop.loanYears || 30, prop.mortgageType || 'principal_interest');
+                const insuranceWeekly = (prop.insurance || 0) / 52;
+                const ratesWeekly = (prop.rates || 0) / 52;
+                const managementFee = weeklyRent * ((prop.managementFeePercent || 0) / 100);
+                const maintenanceWeekly = prop.maintenance || 0;
+                const totalExpenses = weeklyMortgage + insuranceWeekly + ratesWeekly + managementFee + maintenanceWeekly;
+                return weeklyRent - totalExpenses;
+            }
+
+            function getPropertyCalculations(prop) {
+                const purchasePrice = getPurchasePrice(prop);
+                const grossYield = calculateGrossYield(prop.weeklyRent, purchasePrice);
+                const weeklyMortgage = calculateWeeklyMortgage(prop.loanAmount || 0, prop.interestRate || 0, prop.loanYears || 30, prop.mortgageType || 'principal_interest');
+                const weeklyCashFlow = calculateWeeklyCashFlow(prop);
+                const insuranceWeekly = (prop.insurance || 0) / 52;
+                const ratesWeekly = (prop.rates || 0) / 52;
+                const managementFee = (prop.weeklyRent || 0) * ((prop.managementFeePercent || 0) / 100);
+                const totalExpenses = weeklyMortgage + insuranceWeekly + ratesWeekly + managementFee + (prop.maintenance || 0);
+                return { grossYield, weeklyMortgage, weeklyCashFlow, insuranceWeekly, ratesWeekly, managementFee, totalExpenses, annualCashFlow: weeklyCashFlow * 52 };
+            }
+
+            // Loan / deposit sync
+            function updateLoanFromSold() {
+                const soldFor = parseFloat(document.getElementById('soldFor').value) || 0;
+                const askingPrice = parseFloat(document.getElementById('askingPrice').value) || 0;
+                const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+                const purchasePrice = soldFor > 0 ? soldFor : askingPrice;
+                document.getElementById('loanAmount').value = Math.max(0, purchasePrice - deposit).toFixed(2);
+                updateLivePreview();
+            }
+
+            function updateLoanFromDeposit() {
+                const soldFor = parseFloat(document.getElementById('soldFor').value) || 0;
+                const askingPrice = parseFloat(document.getElementById('askingPrice').value) || 0;
+                const deposit = parseFloat(document.getElementById('deposit').value) || 0;
+                const purchasePrice = soldFor > 0 ? soldFor : askingPrice;
+                document.getElementById('loanAmount').value = Math.max(0, purchasePrice - deposit).toFixed(2);
+                updateLivePreview();
+            }
+
+            function updateDepositFromLoan() {
+                const soldFor = parseFloat(document.getElementById('soldFor').value) || 0;
+                const askingPrice = parseFloat(document.getElementById('askingPrice').value) || 0;
+                const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+                const purchasePrice = soldFor > 0 ? soldFor : askingPrice;
+                document.getElementById('deposit').value = Math.max(0, purchasePrice - loanAmount).toFixed(2);
+                updateLivePreview();
+            }
+
+            function updateLivePreview() {
+                const preview = document.getElementById('livePreview');
+                const weeklyRent = parseFloat(document.getElementById('weeklyRent').value) || 0;
+                const soldFor = parseFloat(document.getElementById('soldFor').value) || 0;
+                const askingPrice = parseFloat(document.getElementById('askingPrice').value) || 0;
+                const purchasePrice = soldFor > 0 ? soldFor : askingPrice;
+                const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+                const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
+                const loanYears = parseInt(document.getElementById('loanYears').value) || 30;
+                const mortgageType = document.getElementById('mortgageType').value;
+                const insurance = parseFloat(document.getElementById('insurance').value) || 0;
+                const rates = parseFloat(document.getElementById('rates').value) || 0;
+                const mgmtPct = parseFloat(document.getElementById('managementFeePercent').value) || 0;
+                const maintenance = parseFloat(document.getElementById('maintenance').value) || 0;
+
+                if (!weeklyRent && !purchasePrice && !loanAmount) { preview.style.display = 'none'; return; }
+                preview.style.display = 'block';
+
+                const grossYield = calculateGrossYield(weeklyRent, purchasePrice);
+                const weeklyMortgage = calculateWeeklyMortgage(loanAmount, interestRate, loanYears, mortgageType);
+                const insuranceWeekly = insurance / 52;
+                const ratesWeekly = rates / 52;
+                const mgmtFee = weeklyRent * (mgmtPct / 100);
+                const totalExpenses = weeklyMortgage + insuranceWeekly + ratesWeekly + mgmtFee + maintenance;
+                const cashFlow = weeklyRent - totalExpenses;
+
+                document.getElementById('previewYield').textContent = `Gross Yield (on ${soldFor>0?'sold':'asking'} price): ${grossYield.toFixed(2)}%`;
+                document.getElementById('previewMortgage').textContent = `Weekly Mortgage (${mortgageType==='interest_only'?'Interest Only':'P&I'}): $${weeklyMortgage.toFixed(2)}`;
+                const cfEl = document.getElementById('previewCashflow');
+                cfEl.textContent = `Weekly Cash Flow: $${cashFlow.toFixed(2)}`;
+                cfEl.style.color = cashFlow >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+
+            // Attach listeners
+            ['askingPrice','soldFor','deposit','loanAmount','weeklyRent','interestRate','loanYears','mortgageType','insurance','rates','managementFeePercent','maintenance'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => {
+                    if (id === 'deposit') updateLoanFromDeposit();
+                    else if (id === 'loanAmount') updateDepositFromLoan();
+                    else if (id === 'soldFor') updateLoanFromSold();
+                    else updateLivePreview();
+                });
+            });
+            document.getElementById('mortgageType').addEventListener('change', updateLivePreview);
+
+            function handleFormSubmit(event) {
+                event.preventDefault();
+                const editId = document.getElementById('editId').value;
+                const address = document.getElementById('address').value.trim();
+                const townCity = document.getElementById('townCity').value.trim();
+                const weeklyRent = parseFloat(document.getElementById('weeklyRent').value) || 0;
+                if (!address) { showToast('Please enter a street address.', 'info'); document.getElementById('address').focus(); return; }
+                if (!townCity) { showToast('Please enter a town/city.', 'info'); document.getElementById('townCity').focus(); return; }
+
+                const propData = {
+                    id: editId || generateId(),
+                    address,
+                    townCity,
+                    agent: document.getElementById('agent').value.trim(),
+                    askingPrice: parseFloat(document.getElementById('askingPrice').value) || 0,
+                    cv: parseFloat(document.getElementById('cv').value) || 0,
+                    homesEstimate: parseFloat(document.getElementById('homesEstimate').value) || 0,
+                    weeklyRent,
+                    soldFor: parseFloat(document.getElementById('soldFor').value) || null,
+                    soldDate: document.getElementById('soldDate').value || '',
+                    deposit: parseFloat(document.getElementById('deposit').value) || 0,
+                    loanAmount: parseFloat(document.getElementById('loanAmount').value) || 0,
+                    interestRate: parseFloat(document.getElementById('interestRate').value) || 6.5,
+                    loanYears: parseInt(document.getElementById('loanYears').value) || 30,
+                    mortgageType: document.getElementById('mortgageType').value,
+                    insurance: parseFloat(document.getElementById('insurance').value) || 0,
+                    rates: parseFloat(document.getElementById('rates').value) || 0,
+                    managementFeePercent: parseFloat(document.getElementById('managementFeePercent').value) || 8,
+                    maintenance: parseFloat(document.getElementById('maintenance').value) || 0,
+                };
+
+                if (editId) {
+                    const idx = properties.findIndex(p => p.id === editId);
+                    if (idx >= 0) { properties[idx] = normalizeProperty(propData); showToast('✅ Property updated!', 'success'); }
+                } else {
+                    properties.push(normalizeProperty(propData));
+                    showToast('✅ Property added!', 'success');
+                }
+                saveData();
+                clearForm();
+                renderAll();
+                document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function editProperty(id) {
+                const prop = properties.find(p => p.id === id);
+                if (!prop) return;
+                document.getElementById('editId').value = prop.id;
+                document.getElementById('address').value = prop.address;
+                document.getElementById('townCity').value = prop.townCity;
+                document.getElementById('agent').value = prop.agent || '';
+                document.getElementById('askingPrice').value = prop.askingPrice || '';
+                document.getElementById('cv').value = prop.cv || '';
+                document.getElementById('homesEstimate').value = prop.homesEstimate || '';
+                document.getElementById('weeklyRent').value = prop.weeklyRent || '';
+                document.getElementById('soldFor').value = prop.soldFor || '';
+                document.getElementById('soldDate').value = prop.soldDate || '';
+                document.getElementById('deposit').value = prop.deposit || '';
+                document.getElementById('loanAmount').value = prop.loanAmount || '';
+                document.getElementById('interestRate').value = prop.interestRate || 6.5;
+                document.getElementById('loanYears').value = prop.loanYears || 30;
+                document.getElementById('mortgageType').value = prop.mortgageType || 'principal_interest';
+                document.getElementById('insurance').value = prop.insurance || '';
+                document.getElementById('rates').value = prop.rates || '';
+                document.getElementById('managementFeePercent').value = prop.managementFeePercent || 8;
+                document.getElementById('maintenance').value = prop.maintenance || '';
+
+                document.getElementById('formTitle').textContent = 'Edit Property';
+                document.getElementById('formBadge').style.display = 'inline';
+                document.getElementById('submitBtn').textContent = '✏️ Update Property';
+                document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+                updateLivePreview();
+                document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function cancelEdit() { clearForm(); }
+
+            function clearForm() {
+                document.getElementById('editId').value = '';
+                document.getElementById('propertyForm').reset();
+                document.getElementById('interestRate').value = '6.50';
+                document.getElementById('loanYears').value = '30';
+                document.getElementById('mortgageType').value = 'principal_interest';
+                document.getElementById('managementFeePercent').value = '8';
+                document.getElementById('formTitle').textContent = 'Add New Property';
+                document.getElementById('formBadge').style.display = 'none';
+                document.getElementById('submitBtn').textContent = '✅ Add Property';
+                document.getElementById('cancelEditBtn').style.display = 'none';
+                document.getElementById('livePreview').style.display = 'none';
+                selectedPropertyId = null;
+                document.getElementById('analysisCard').style.display = 'none';
+            }
+
+            function deleteProperty(id) {
+                if (confirm('Delete this property?')) {
+                    properties = properties.filter(p => p.id !== id);
+                    saveData();
+                    if (selectedPropertyId === id) { selectedPropertyId = null; document.getElementById('analysisCard').style.display = 'none'; }
+                    if (document.getElementById('editId').value === id) clearForm();
+                    renderAll();
+                    showToast('🗑 Property deleted.', 'info');
+                }
+            }
+
+            function getFilteredAndSortedProperties() {
+                let filtered = [...properties];
+                const townFilter = document.getElementById('townFilter').value;
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+                if (townFilter) filtered = filtered.filter(p => p.townCity.toLowerCase() === townFilter.toLowerCase());
+                if (searchTerm) filtered = filtered.filter(p => p.address.toLowerCase().includes(searchTerm) || p.townCity.toLowerCase().includes(searchTerm) || (p.agent||'').toLowerCase().includes(searchTerm));
+
+                // Compute average once for expected prices
+                const avgPct = getAverageSoldPercentage();
+
+                filtered.sort((a,b) => {
+                    let valA, valB;
+                    switch (sortColumn) {
+                        case 'grossYield':
+                            valA = calculateGrossYield(a.weeklyRent, getPurchasePrice(a));
+                            valB = calculateGrossYield(b.weeklyRent, getPurchasePrice(b));
+                            break;
+                        case 'weeklyCashFlow':
+                            valA = calculateWeeklyCashFlow(a);
+                            valB = calculateWeeklyCashFlow(b);
+                            break;
+                        case 'soldVsCvPercent':
+                            valA = getSoldVsCvPercent(a) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+                            valB = getSoldVsCvPercent(b) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+                            break;
+                        case 'expectedSellPrice':
+                            valA = getExpectedSellPrice(a) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+                            valB = getExpectedSellPrice(b) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+                            break;
+                        default:
+                            valA = a[sortColumn] ?? '';
+                            valB = b[sortColumn] ?? '';
+                    }
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    if (valA === null || valA === '') valA = sortDirection === 'asc' ? Infinity : -Infinity;
+                    if (valB === null || valB === '') valB = sortDirection === 'asc' ? Infinity : -Infinity;
+                    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                return filtered;
+            }
+
+            function setSort(column) {
+                if (sortColumn === column) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                else { sortColumn = column; sortDirection = 'asc'; }
+                renderTable();
+            }
+
+            function renderTable() {
+                const filtered = getFilteredAndSortedProperties();
+                document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+                document.getElementById('sort-'+sortColumn).textContent = sortDirection === 'asc' ? '▲' : '▼';
+                document.getElementById('propertyCount').textContent = properties.length + ' properties';
+
+                const avgPct = getAverageSoldPercentage();
+                const badgeEl = document.getElementById('avgSoldBadge');
+                if (avgPct !== null) {
+                    const soldCount = properties.filter(p => p.soldFor && p.soldFor > 0 && p.cv && p.cv > 0).length;
+                    badgeEl.innerHTML = `📊 Avg Sold vs CV: <span style="color:${avgPct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${avgPct >= 0 ? '+' : ''}${avgPct.toFixed(1)}%</span> (from ${soldCount} sold)`;
+                } else {
+                    badgeEl.innerHTML = '';
+                }
+
+                const tbody = document.getElementById('tableBody');
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="13" class="no-data">No properties match your filter.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = filtered.map(p => {
+                    const calc = getPropertyCalculations(p);
+                    const cashFlowClass = calc.weeklyCashFlow >= 0 ? 'cashflow-positive' : 'cashflow-negative';
+                    const isSelected = p.id === selectedPropertyId;
+                    const mortgageTypeLabel = p.mortgageType === 'interest_only' ? 'Interest Only' : 'P&I';
+                    
+                    // Sold vs CV percentage
+                    const soldPct = getSoldVsCvPercent(p);
+                    const soldPctCell = soldPct !== null 
+                        ? `<span class="${soldPct >= 0 ? 'percentage-positive' : 'percentage-negative'}">${soldPct >= 0 ? '+' : ''}${soldPct.toFixed(1)}%</span>` 
+                        : '-';
+                    
+                    // Expected sell price for unsold properties
+                    const expectedPrice = getExpectedSellPrice(p);
+                    const expectedCell = expectedPrice !== null 
+                        ? `$${expectedPrice.toLocaleString('en-NZ', {maximumFractionDigits:0})}` 
+                        : '-';
+
+                    return `<tr class="${isSelected ? 'selected' : ''}" onclick="selectProperty('${p.id}')">
+                        <td><strong>${escapeHTML(p.address)}</strong></td>
+                        <td>${escapeHTML(p.townCity)}</td>
+                        <td>${escapeHTML(p.agent || '-')}</td>
+                        <td>${p.askingPrice ? '$'+p.askingPrice.toLocaleString('en-NZ') : '-'}</td>
+                        <td>${p.cv ? '$'+p.cv.toLocaleString('en-NZ') : '-'}</td>
+                        <td>$${p.weeklyRent.toFixed(2)}</td>
+                        <td class="yield-cell">${calc.grossYield.toFixed(2)}%</td>
+                        <td>${mortgageTypeLabel}</td>
+                        <td>${p.soldFor ? '$'+p.soldFor.toLocaleString('en-NZ')+(p.soldDate?' ('+formatDate(p.soldDate)+')':'') : '-'}</td>
+                        <td>${soldPctCell}</td>
+                        <td>${expectedCell}</td>
+                        <td class="${cashFlowClass}">$${calc.weeklyCashFlow.toFixed(2)}</td>
+                        <td onclick="event.stopPropagation();">
+                            <button class="btn btn-ghost btn-sm" onclick="editProperty('${p.id}')" title="Edit">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteProperty('${p.id}')" title="Delete">🗑</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                updateTownFilterOptions();
+            }
+
+            function updateTownFilterOptions() {
+                const filter = document.getElementById('townFilter');
+                const currentValue = filter.value;
+                const towns = [...new Set(properties.map(p => p.townCity).filter(Boolean))].sort();
+                filter.innerHTML = '<option value="">🏙️ All Towns/Cities</option>' + towns.map(t => `<option value="${escapeHTML(t)}" ${t===currentValue?'selected':''}>${escapeHTML(t)} (${properties.filter(p=>p.townCity===t).length})</option>`).join('');
+                document.getElementById('townCityList').innerHTML = towns.map(t => `<option value="${escapeHTML(t)}">`).join('');
+            }
+
+            function clearFilter() {
+                document.getElementById('townFilter').value = '';
+                document.getElementById('searchInput').value = '';
+                renderTable();
+            }
+
+            function selectProperty(id) {
+                selectedPropertyId = id;
+                renderTable();
+                showAnalysis(id);
+                document.getElementById('analysisCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function showAnalysis(id) {
+                const prop = properties.find(p => p.id === id);
+                if (!prop) { document.getElementById('analysisCard').style.display = 'none'; return; }
+                document.getElementById('analysisCard').style.display = 'block';
+                document.getElementById('analysisAddress').textContent = prop.address + ', ' + prop.townCity + (prop.agent ? ' (Agent: '+prop.agent+')' : '');
+                document.getElementById('analysisInterestRate').value = prop.interestRate || 6.5;
+                document.getElementById('analysisLoanYears').value = prop.loanYears || 30;
+                document.getElementById('analysisDeposit').value = prop.deposit || 0;
+                document.getElementById('analysisMortgageType').value = prop.mortgageType || 'principal_interest';
+                refreshAnalysis();
+            }
+
+            function refreshAnalysis() {
+                const prop = properties.find(p => p.id === selectedPropertyId);
+                if (!prop) return;
+                const adjInterestRate = parseFloat(document.getElementById('analysisInterestRate').value) || prop.interestRate || 6.5;
+                const adjLoanYears = parseInt(document.getElementById('analysisLoanYears').value) || prop.loanYears || 30;
+                const adjDeposit = parseFloat(document.getElementById('analysisDeposit').value) || prop.deposit || 0;
+                const adjMortgageType = document.getElementById('analysisMortgageType').value;
+                const purchasePrice = getPurchasePrice(prop);
+                const adjLoanAmount = Math.max(0, purchasePrice - adjDeposit);
+                const weeklyMortgage = calculateWeeklyMortgage(adjLoanAmount, adjInterestRate, adjLoanYears, adjMortgageType);
+                const grossYield = calculateGrossYield(prop.weeklyRent, purchasePrice);
+                const insuranceWeekly = (prop.insurance || 0) / 52;
+                const ratesWeekly = (prop.rates || 0) / 52;
+                const mgmtFee = (prop.weeklyRent || 0) * ((prop.managementFeePercent || 0) / 100);
+                const totalExpenses = weeklyMortgage + insuranceWeekly + ratesWeekly + mgmtFee + (prop.maintenance || 0);
+                const weeklyCashFlow = (prop.weeklyRent || 0) - totalExpenses;
+
+                // Additional stats for CV analysis
+                const soldPct = getSoldVsCvPercent(prop);
+                const expectedPrice = getExpectedSellPrice(prop);
+                const avgPct = getAverageSoldPercentage();
+
+                const grid = document.getElementById('analysisGrid');
+                let additionalStats = '';
+                if (soldPct !== null) {
+                    additionalStats += `<div class="analysis-stat ${soldPct >= 0 ? 'highlight-green' : 'highlight-red'}"><div class="stat-label">Sold % vs CV</div><div class="stat-value">${soldPct >= 0 ? '+' : ''}${soldPct.toFixed(1)}%</div></div>`;
+                } else if (expectedPrice !== null) {
+                    additionalStats += `<div class="analysis-stat highlight-blue"><div class="stat-label">Est. Sell Price (based on avg ${avgPct >= 0 ? '+' : ''}${avgPct.toFixed(1)}%)</div><div class="stat-value">$${expectedPrice.toLocaleString('en-NZ', {maximumFractionDigits:0})}</div></div>`;
+                }
+
+                grid.innerHTML = `
+                    <div class="analysis-stat highlight-blue"><div class="stat-label">Gross Yield</div><div class="stat-value">${grossYield.toFixed(2)}%</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Weekly Rent</div><div class="stat-value">$${(prop.weeklyRent||0).toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Weekly Mortgage (${adjMortgageType==='interest_only'?'Interest Only':'P&I'})</div><div class="stat-value">$${weeklyMortgage.toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Insurance (weekly)</div><div class="stat-value">$${insuranceWeekly.toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Rates (weekly)</div><div class="stat-value">$${ratesWeekly.toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Mgmt Fee (${prop.managementFeePercent||8}%)</div><div class="stat-value">$${mgmtFee.toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Maintenance (weekly)</div><div class="stat-value">$${(prop.maintenance||0).toFixed(2)}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Total Expenses (weekly)</div><div class="stat-value">$${totalExpenses.toFixed(2)}</div></div>
+                    <div class="analysis-stat ${weeklyCashFlow >= 0 ? 'highlight-green' : 'highlight-red'}"><div class="stat-label">💰 Weekly Cash Flow</div><div class="stat-value" style="font-size:1.8rem;">$${weeklyCashFlow.toFixed(2)}</div></div>
+                    <div class="analysis-stat ${weeklyCashFlow >= 0 ? 'highlight-green' : 'highlight-red'}"><div class="stat-label">📅 Annual Cash Flow</div><div class="stat-value">$${(weeklyCashFlow*52).toFixed(2)}</div></div>
+                    ${additionalStats}
+                    <div class="analysis-stat"><div class="stat-label">Loan Amount</div><div class="stat-value">$${adjLoanAmount.toLocaleString('en-NZ')}</div></div>
+                    <div class="analysis-stat"><div class="stat-label">Agent</div><div class="stat-value" style="font-size:1rem;">${escapeHTML(prop.agent || 'N/A')}</div></div>
+                `;
+            }
+
+            function saveAnalysisAdjustments() {
+                const prop = properties.find(p => p.id === selectedPropertyId);
+                if (!prop) return;
+                prop.interestRate = parseFloat(document.getElementById('analysisInterestRate').value) || prop.interestRate;
+                prop.loanYears = parseInt(document.getElementById('analysisLoanYears').value) || prop.loanYears;
+                prop.deposit = parseFloat(document.getElementById('analysisDeposit').value) || prop.deposit;
+                prop.mortgageType = document.getElementById('analysisMortgageType').value;
+                const purchasePrice = getPurchasePrice(prop);
+                prop.loanAmount = Math.max(0, purchasePrice - prop.deposit);
+                saveData();
+                renderAll();
+                showAnalysis(selectedPropertyId);
+                showToast('✅ Adjustments saved!', 'success');
+            }
+
+            function exportJSON() {
+                if (properties.length === 0) { showToast('No data to export.', 'info'); return; }
+                const blob = new Blob([JSON.stringify(properties, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `property-analysis-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showToast('📥 JSON exported!', 'success');
+            }
+
+            function importJSON(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error('Invalid format');
+                        const normalized = data.map(normalizeProperty);
+                        if (confirm(`Found ${normalized.length} properties.\nOK to replace all, Cancel to merge.`)) {
+                            properties = normalized;
+                        } else {
+                            const existingIds = new Set(properties.map(p => p.id));
+                            normalized.forEach(p => {
+                                if (existingIds.has(p.id)) properties[properties.findIndex(ex => ex.id === p.id)] = p;
+                                else properties.push(p);
+                            });
+                        }
+                        saveData();
+                        clearForm();
+                        selectedPropertyId = null;
+                        document.getElementById('analysisCard').style.display = 'none';
+                        renderAll();
+                        showToast('📤 Data imported!', 'success');
+                    } catch (err) { showToast('❌ Invalid JSON file.', 'info'); }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            function confirmClearAll() {
+                if (properties.length === 0) return;
+                if (confirm(`Delete ALL ${properties.length} properties?`)) {
+                    properties = [];
+                    saveData();
+                    clearForm();
+                    selectedPropertyId = null;
+                    document.getElementById('analysisCard').style.display = 'none';
+                    renderAll();
+                    showToast('🗑 All cleared.', 'info');
+                }
+            }
+
+            function loadSampleData() {
+                if (properties.length > 0 && !confirm('Add samples to existing data?')) return;
+                const samples = [
+                    { id: 'sample_1', address: '45 Lake Road', townCity: 'Auckland', agent: 'Emma Chen – Barfoot & Thompson', askingPrice: 920000, cv: 880000, homesEstimate: 905000, weeklyRent: 720, soldFor: 910000, soldDate: '2024-11-15', deposit: 184000, loanAmount: 726000, interestRate: 6.49, loanYears: 30, mortgageType: 'principal_interest', insurance: 1950, rates: 2800, managementFeePercent: 8, maintenance: 35 },
+                    { id: 'sample_2', address: '12 Harbour View Terrace', townCity: 'Wellington', agent: 'Liam O\'Sullivan – Ray White', askingPrice: 680000, cv: 650000, homesEstimate: 670000, weeklyRent: 580, soldFor: null, soldDate: '', deposit: 136000, loanAmount: 544000, interestRate: 6.75, loanYears: 25, mortgageType: 'interest_only', insurance: 1600, rates: 2400, managementFeePercent: 7.5, maintenance: 30 },
+                    { id: 'sample_3', address: '78 Papanui Road', townCity: 'Christchurch', agent: 'Aroha Williams – Harcourts', askingPrice: 550000, cv: 520000, homesEstimate: 540000, weeklyRent: 495, soldFor: 545000, soldDate: '2025-01-20', deposit: 110000, loanAmount: 435000, interestRate: 6.25, loanYears: 30, mortgageType: 'principal_interest', insurance: 1400, rates: 2100, managementFeePercent: 8.5, maintenance: 28 },
+                    { id: 'sample_4', address: '22 Victoria Street', townCity: 'Auckland', agent: 'Mark Wilson – Bayleys', askingPrice: 1050000, cv: 1020000, homesEstimate: 1035000, weeklyRent: 850, soldFor: 1100000, soldDate: '2025-02-10', deposit: 210000, loanAmount: 890000, interestRate: 6.35, loanYears: 30, mortgageType: 'principal_interest', insurance: 2100, rates: 3100, managementFeePercent: 7.8, maintenance: 45 }
+                ];
+                samples.forEach(s => { if (!properties.find(p => p.id === s.id)) properties.push(normalizeProperty(s)); });
+                saveData();
+                clearForm();
+                selectedPropertyId = null;
+                document.getElementById('analysisCard').style.display = 'none';
+                renderAll();
+                showToast('📋 Samples loaded!', 'success');
+            }
+
+            function renderAll() {
+                renderTable();
+                updateTownFilterOptions();
+                if (selectedPropertyId && properties.find(p => p.id === selectedPropertyId)) showAnalysis(selectedPropertyId);
+                else if (selectedPropertyId) { selectedPropertyId = null; document.getElementById('analysisCard').style.display = 'none'; }
+            }
+
+            function escapeHTML(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+            function formatDate(d) { if(!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'}); }
+
+            function showToast(msg, type='info') {
+                const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+                document.getElementById('toastContainer').appendChild(t);
+                setTimeout(()=>{ t.style.animation='fadeOut 0.4s forwards'; setTimeout(()=>t.remove(),400); },2800);
+            }
+
+            window.editProperty = editProperty;
+            window.deleteProperty = deleteProperty;
+            window.selectProperty = selectProperty;
+            window.setSort = setSort;
+            window.clearFilter = clearFilter;
+            window.clearForm = clearForm;
+            window.cancelEdit = cancelEdit;
+            window.handleFormSubmit = handleFormSubmit;
+            window.exportJSON = exportJSON;
+            window.importJSON = importJSON;
+            window.confirmClearAll = confirmClearAll;
+            window.loadSampleData = loadSampleData;
+            window.saveAnalysisAdjustments = saveAnalysisAdjustments;
+            window.refreshAnalysis = refreshAnalysis;
+            window.updateLoanFromSold = updateLoanFromSold;
+            window.updateLoanFromDeposit = updateLoanFromDeposit;
+            window.updateDepositFromLoan = updateDepositFromLoan;
+            window.renderTable = renderTable;
+
+            loadData();
+            document.getElementById('interestRate').value = '6.50';
+            document.getElementById('loanYears').value = '30';
+            document.getElementById('mortgageType').value = 'principal_interest';
+            document.getElementById('managementFeePercent').value = '8';
+            renderAll();
+        })();
+    </script>
+</body>
+</html>
