@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Paycheck Sorter | 60/20/10/10 Money Buckets</title>
+  <!-- Google Fonts & simple reset -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 (free icons, for subtle hints) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f0f4fa 0%, #e9eef4 100%);
+      font-family: 'Inter', sans-serif;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+      color: #1a2c3e;
+    }
+
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* header section */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e466e, #2b5a8c);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    .header p {
+      color: #4a627a;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* input panel */
+    .input-panel {
+      background: white;
+      border-radius: 2rem;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .input-group {
+      flex: 2;
+      min-width: 200px;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2c4e70;
+      margin-bottom: 0.4rem;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      border: 1.5px solid #cfdfed;
+      border-radius: 1.5rem;
+      background: #fefefe;
+      transition: all 0.2s;
+      font-family: monospace;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #2b7a4b;
+      box-shadow: 0 0 0 3px rgba(43, 122, 75, 0.2);
+    }
+
+    .btn-primary {
+      background: #1c6e43;
+      border: none;
+      padding: 0.9rem 2rem;
+      border-radius: 2rem;
+      font-weight: 700;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-primary:hover {
+      background: #135a37;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-secondary {
+      background: #eef2f7;
+      border: none;
+      padding: 0.7rem 1.4rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      color: #2c4e70;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* card grid */
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.8rem;
+      margin: 2rem 0 1.5rem;
+    }
+
+    /* each "account button" style — entire card behaves like button (clickable) */
+    .account-card {
+      background: white;
+      border-radius: 1.8rem;
+      padding: 1.5rem 1.2rem 1.5rem 1.5rem;
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      box-shadow: 0 12px 22px -12px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .account-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 36px -16px rgba(0, 0, 0, 0.2);
+      border-color: #bdd9e7;
+    }
+
+    .account-card:active {
+      transform: translateY(-2px);
+    }
+
+    /* colored top accent */
+    .card-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+    }
+
+    .expenses-accent { background: #3b82f6; }
+    .fire-accent { background: #f97316; }
+    .splurge-accent { background: #ec489a; }
+    .smile-accent { background: #10b981; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .category-title {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .category-title i {
+      font-size: 1.4rem;
+      opacity: 0.8;
+    }
+
+    .percent-badge {
+      background: #f0f2f5;
+      border-radius: 40px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .amount {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0.75rem 0 0.6rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #0f2b3d;
+      letter-spacing: -0.5px;
+      border-bottom: 1px dashed #dce5ec;
+      display: inline-block;
+      padding-bottom: 4px;
+    }
+
+    .description-area {
+      margin-top: 1rem;
+      background: #f8fafd;
+      padding: 0.85rem;
+      border-radius: 1.2rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #2c4f6e;
+      border-left: 3px solid currentColor;
+      transition: background 0.1s;
+    }
+
+    .description-text {
+      word-break: break-word;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .description-text i {
+      font-size: 0.8rem;
+      margin-top: 0.1rem;
+      color: #6c86a3;
+    }
+
+    .edit-hint {
+      font-size: 0.7rem;
+      margin-top: 0.6rem;
+      text-align: right;
+      color: #7890aa;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .reset-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+      gap: 1rem;
+    }
+
+    /* modal for customization */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal-container {
+      background: white;
+      max-width: 450px;
+      width: 90%;
+      border-radius: 2rem;
+      padding: 1.8rem 1.8rem 2rem;
+      box-shadow: 0 30px 40px rgba(0, 0, 0, 0.2);
+      transform: scale(0.96);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.active .modal-container {
+      transform: scale(1);
+    }
+
+    .modal-container h3 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-container textarea {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1px solid #cbdde9;
+      padding: 0.8rem;
+      font-family: 'Inter', monospace;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+      resize: vertical;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-end;
+    }
+
+    .modal-buttons button {
+      padding: 0.6rem 1.4rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-save {
+      background: #1c6e43;
+      color: white;
+    }
+
+    .btn-cancel {
+      background: #eef2f7;
+      color: #2c3e50;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+      color: #6e889e;
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 1rem;
+      }
+      .category-title {
+        font-size: 1.3rem;
+      }
+      .amount {
+        font-size: 1.6rem;
+      }
+      .input-panel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-primary {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div class="header">
+    <h1><i class="fas fa-coins"></i> Paycheck Sorter</h1>
+    <p>60% Expenses · 20% Fire Extinguisher · 10% Splurge · 10% Smile</p>
+    <p style="font-size: 0.85rem;">⚡ Each account is a <strong>clickable button</strong> — customize spending description</p>
+  </div>
+
+  <div class="input-panel">
+    <div class="input-group">
+      <label><i class="fas fa-dollar-sign"></i> Your paycheck amount</label>
+      <input type="number" id="payAmount" step="any" placeholder="e.g., 4250.00" value="3250.00">
+    </div>
+    <button class="btn-primary" id="sortBtn"><i class="fas fa-chart-pie"></i> Sort My Money</button>
+    <button class="btn-secondary" id="resetDescriptionsBtn"><i class="fas fa-pen"></i> Reset Descriptions</button>
+  </div>
+
+  <!-- 4 bank accounts (cards) grid -->
+  <div class="accounts-grid" id="accountsGrid">
+    <!-- dynamic JS will fill but we create structure via JS to keep mapping clean -->
+    <!-- will populate via javascript for better consistency -->
+  </div>
+  <div class="reset-bar">
+    <span style="font-size: 0.75rem; color:#4b6f8e;"><i class="fas fa-lightbulb"></i> Tip: Click any card to edit its spending purpose</span>
+  </div>
+  <footer>
+    <i class="fas fa-piggy-bank"></i> 60/20/10/10 rule — distribute your income into intentional accounts
+  </footer>
+</div>
+
+<!-- Modal: customize description -->
+<div id="customModal" class="modal-overlay">
+  <div class="modal-container">
+    <h3 id="modalCategoryTitle">✏️ Customize description</h3>
+    <textarea id="modalDescInput" rows="3" placeholder="Describe how to spend this money..."></textarea>
+    <div class="modal-buttons">
+      <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+      <button class="btn-save" id="saveModalBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ----- ACCOUNT DEFINITIONS -----
+  const ACCOUNTS = [
+    {
+      id: "expenses",
+      title: "Expenses",
+      percent: 0.60,
+      icon: "fas fa-home",
+      defaultDesc: "🏠 Rent, utilities, groceries, insurance, transport, basic needs – 60% of income",
+      accentClass: "expenses-accent"
+    },
+    {
+      id: "fireExtinguisher",
+      title: "Fire Extinguisher",
+      percent: 0.20,
+      icon: "fas fa-fire-extinguisher",
+      defaultDesc: "🔥 Emergency fund! Job loss, medical bills, urgent car repairs, unexpected 'fires' – 20%",
+      accentClass: "fire-accent"
+    },
+    {
+      id: "splurge",
+      title: "Splurge",
+      percent: 0.10,
+      icon: "fas fa-glass-cheers",
+      defaultDesc: "🍕 Dining out, streaming, hobbies, fun nights, new gadgets – 10% guilt-free joy",
+      accentClass: "splurge-accent"
+    },
+    {
+      id: "smile",
+      title: "Smile",
+      percent: 0.10,
+      icon: "fas fa-smile-wink",
+      defaultDesc: "😊 Charity, gifts for friends, experiences, travel fund – 10% for kindness & happiness",
+      accentClass: "smile-accent"
+    }
+  ];
+
+  // State: keep descriptions per category (customizable)
+  let descriptionsMap = {};
+  // current allocated amounts (will be updated)
+  let currentAllocations = {
+    expenses: 0,
+    fireExtinguisher: 0,
+    splurge: 0,
+    smile: 0
+  };
+
+  // DOM elements
+  const accountsGrid = document.getElementById("accountsGrid");
+  const payInput = document.getElementById("payAmount");
+  const sortBtn = document.getElementById("sortBtn");
+  const resetDescBtn = document.getElementById("resetDescriptionsBtn");
+  
+  // Modal elements
+  const modalOverlay = document.getElementById("customModal");
+  const modalCategoryTitle = document.getElementById("modalCategoryTitle");
+  const modalDescInput = document.getElementById("modalDescInput");
+  const cancelModalBtn = document.getElementById("cancelModalBtn");
+  const saveModalBtn = document.getElementById("saveModalBtn");
+  
+  let activeCategoryId = null;   // which category we are editing
+
+  // Helper: format money
+  function formatMoney(amount) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+  }
+
+  // Initialize default descriptions
+  function initDescriptions() {
+    ACCOUNTS.forEach(acc => {
+      descriptionsMap[acc.id] = acc.defaultDesc;
+    });
+  }
+
+  // Calculate allocation based on gross pay (float)
+  function calculateAllocations(grossPay) {
+    if (isNaN(grossPay) || grossPay < 0) grossPay = 0;
+    const expensesVal = grossPay * 0.60;
+    const fireVal = grossPay * 0.20;
+    const splurgeVal = grossPay * 0.10;
+    const smileVal = grossPay * 0.10;
+    return {
+      expenses: expensesVal,
+      fireExtinguisher: fireVal,
+      splurge: splurgeVal,
+      smile: smileVal
+    };
+  }
+
+  // Update UI: render cards with updated amounts and current descriptions
+  function renderAllCards() {
+    if (!accountsGrid) return;
+    accountsGrid.innerHTML = '';
+    
+    ACCOUNTS.forEach(acc => {
+      const amountForCategory = currentAllocations[acc.id];
+      const currentDesc = descriptionsMap[acc.id] || acc.defaultDesc;
+      
+      // Build card element
+      const card = document.createElement('div');
+      card.className = 'account-card';
+      card.setAttribute('data-category-id', acc.id);
+      
+      // Add colored accent bar
+      const accentDiv = document.createElement('div');
+      accentDiv.className = `card-accent ${acc.accentClass}`;
+      card.appendChild(accentDiv);
+      
+      // inner structure
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'card-header';
+      headerDiv.innerHTML = `
+        <div class="category-title">
+          <i class="${acc.icon}"></i> 
+          <span>${acc.title}</span>
+        </div>
+        <span class="percent-badge">${Math.round(acc.percent * 100)}%</span>
+      `;
+      
+      const amountSpan = document.createElement('div');
+      amountSpan.className = 'amount';
+      amountSpan.id = `amount-${acc.id}`;
+      amountSpan.textContent = formatMoney(amountForCategory);
+      
+      const descDiv = document.createElement('div');
+      descDiv.className = 'description-area';
+      descDiv.innerHTML = `
+        <div class="description-text">
+          <i class="fas fa-comment-dots"></i>
+          <span id="desc-text-${acc.id}">${escapeHtml(currentDesc)}</span>
+        </div>
+        <div class="edit-hint">
+          <i class="fas fa-mouse-pointer"></i> <span>click to customize</span>
+        </div>
+      `;
+      
+      card.appendChild(headerDiv);
+      card.appendChild(amountSpan);
+      card.appendChild(descDiv);
+      
+      // click event = open modal for this category (buttons behavior)
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCustomizationModal(acc.id, acc.title);
+      });
+      
+      accountsGrid.appendChild(card);
+    });
+  }
+  
+  // simple escape to prevent XSS (though descriptions are safe, but good practice)
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+      return c;
+    });
+  }
+  
+  // update only the amounts in existing cards (without full re-render to keep event listeners)
+  function updateAmountsInUI() {
+    for (let acc of ACCOUNTS) {
+      const amountSpan = document.getElementById(`amount-${acc.id}`);
+      if (amountSpan) {
+        amountSpan.textContent = formatMoney(currentAllocations[acc.id]);
+      }
+    }
+  }
+  
+  // update descriptions in UI after editing (without re-render, to preserve cards)
+  function updateDescriptionUI(categoryId, newDesc) {
+    const descSpan = document.getElementById(`desc-text-${categoryId}`);
+    if (descSpan) {
+      descSpan.innerHTML = escapeHtml(newDesc);
+    }
+  }
+  
+  // full refresh after description change
+  function refreshDescriptionsUI() {
+    for (let acc of ACCOUNTS) {
+      const descSpan = document.getElementById(`desc-text-${acc.id}`);
+      if (descSpan) {
+        descSpan.innerHTML = escapeHtml(descriptionsMap[acc.id]);
+      }
+    }
+  }
+  
+  // sort logic: get paycheck amount, re-calc allocations, update state + UI amounts
+  function sortPaycheck() {
+    let rawValue = payInput.value.trim();
+    if (rawValue === "") {
+      rawValue = "0";
+    }
+    let grossPay = parseFloat(rawValue);
+    if (isNaN(grossPay) || grossPay < 0) {
+      grossPay = 0;
+      payInput.value = 0;
+      alert("Please enter a valid positive amount.");
+    }
+    // recalc allocations
+    const newAllocations = calculateAllocations(grossPay);
+    currentAllocations = { ...newAllocations };
+    // update displayed amounts in UI
+    updateAmountsInUI();
+  }
+  
+  // Open modal to customize description of selected category
+  function openCustomizationModal(categoryId, categoryTitle) {
+    activeCategoryId = categoryId;
+    modalCategoryTitle.innerHTML = `✏️ Customize "${categoryTitle}" spending purpose`;
+    const currentDesc = descriptionsMap[categoryId] || "";
+    modalDescInput.value = currentDesc;
+    modalOverlay.classList.add('active');
+  }
+  
+  function closeModal() {
+    modalOverlay.classList.remove('active');
+    activeCategoryId = null;
+  }
+  
+  // Save description from modal
+  function saveDescription() {
+    if (!activeCategoryId) return;
+    const newDescription = modalDescInput.value.trim();
+    if (newDescription !== "") {
+      descriptionsMap[activeCategoryId] = newDescription;
+    } else {
+      // if empty, restore default from account definition
+      const originalAcc = ACCOUNTS.find(acc => acc.id === activeCategoryId);
+      if (originalAcc) {
+        descriptionsMap[activeCategoryId] = originalAcc.defaultDesc;
+      } else {
+        descriptionsMap[activeCategoryId] = "Spend intentionally ✨";
+      }
+    }
+    // Update UI text for the specific category
+    updateDescriptionUI(activeCategoryId, descriptionsMap[activeCategoryId]);
+    closeModal();
+  }
+  
+  // Reset all categories to default descriptions (without affecting amounts)
+  function resetToDefaultDescriptions() {
+    ACCOUNTS.forEach(acc => {
+      descriptionsMap[acc.id] = acc.defaultDesc;
+    });
+    refreshDescriptionsUI();
+    // optional: show a temporary notification? but just reset description
+    // avoid modal open
+  }
+  
+  // Initial load: set default descriptions, set default paycheck (3250) and compute allocation, render all cards.
+  function initApp() {
+    initDescriptions();
+    // Get initial paycheck amount from input
+    let initialPay = parseFloat(payInput.value);
+    if (isNaN(initialPay) || initialPay < 0) initialPay = 0;
+    const initialAllocations = calculateAllocations(initialPay);
+    currentAllocations = { ...initialAllocations };
+    renderAllCards();     // full render (cards with listeners)
+    
+    // attach event listeners for sort & reset
+    sortBtn.addEventListener('click', () => {
+      sortPaycheck();
+    });
+    
+    resetDescBtn.addEventListener('click', () => {
+      resetToDefaultDescriptions();
+    });
+    
+    // optional: pressing Enter in input triggers sorting
+    payInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sortPaycheck();
+      }
+    });
+    
+    // modal buttons
+    cancelModalBtn.addEventListener('click', closeModal);
+    saveModalBtn.addEventListener('click', saveDescription);
+    // click outside modal to close
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+  }
+  
+  // start everything
+  initApp();
+</script>
+</body>
+</html>
